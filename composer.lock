@@ -1,0 +1,269 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "f98a4b26340f48426c45f86cf8e40e1f",
+    "packages": [
+        {
+            "name": "predis/predis",
+            "version": "v1.1.10",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/predis/predis.git",
+                "reference": "a2fb02d738bedadcffdbb07efa3a5e7bd57f8d6e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/predis/predis/zipball/a2fb02d738bedadcffdbb07efa3a5e7bd57f8d6e",
+                "reference": "a2fb02d738bedadcffdbb07efa3a5e7bd57f8d6e",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.9"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~4.8"
+            },
+            "suggest": {
+                "ext-curl": "Allows access to Webdis when paired with phpiredis",
+                "ext-phpiredis": "Allows faster serialization and deserialization of the Redis protocol"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Predis\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Daniele Alessandri",
+                    "email": "suppakilla@gmail.com",
+                    "homepage": "http://clorophilla.net",
+                    "role": "Creator & Maintainer"
+                },
+                {
+                    "name": "Till Krüss",
+                    "homepage": "https://till.im",
+                    "role": "Maintainer"
+                }
+            ],
+            "description": "Flexible and feature-complete Redis client for PHP and HHVM",
+            "homepage": "http://github.com/predis/predis",
+            "keywords": [
+                "nosql",
+                "predis",
+                "redis"
+            ],
+            "support": {
+                "issues": "https://github.com/predis/predis/issues",
+                "source": "https://github.com/predis/predis/tree/v1.1.10"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/tillkruss",
+                    "type": "github"
+                }
+            ],
+            "time": "2022-01-05T17:46:08+00:00"
+        },
+        {
+            "name": "symfony/process",
+            "version": "v3.4.47",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/process.git",
+                "reference": "b8648cf1d5af12a44a51d07ef9bf980921f15fca"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/process/zipball/b8648cf1d5af12a44a51d07ef9bf980921f15fca",
+                "reference": "b8648cf1d5af12a44a51d07ef9bf980921f15fca",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.5.9|>=7.0.8"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Process\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony Process Component",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/process/tree/v3.4.47"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2020-10-24T10:57:07+00:00"
+        },
+        {
+            "name": "yiicod/yii2-base",
+            "version": "1.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/yiicod/yii2-base.git",
+                "reference": "7e39fb4c989b6b092908080db499a95c924413cd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/yiicod/yii2-base/zipball/7e39fb4c989b6b092908080db499a95c924413cd",
+                "reference": "7e39fb4c989b6b092908080db499a95c924413cd",
+                "shasum": ""
+            },
+            "type": "yii-extension",
+            "autoload": {
+                "psr-4": {
+                    "yiicod\\base\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "New BSD License"
+            ],
+            "authors": [
+                {
+                    "name": "Alexey Orlov",
+                    "email": "aaorlov88@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The base behaviors, helpers, etc. for the Yii2 framework",
+            "support": {
+                "issues": "https://github.com/yiicod/yii2-base/issues",
+                "source": "https://github.com/yiicod/yii2-base/tree/master"
+            },
+            "time": "2016-10-23T11:31:33+00:00"
+        },
+        {
+            "name": "yiicod/yii2-cron",
+            "version": "1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/yiicod/yii2-cron.git",
+                "reference": "304b57ad76b0248532be46050724ac2b45ce32b5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/yiicod/yii2-cron/zipball/304b57ad76b0248532be46050724ac2b45ce32b5",
+                "reference": "304b57ad76b0248532be46050724ac2b45ce32b5",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4.0"
+            },
+            "type": "yii2-extension",
+            "autoload": {
+                "psr-4": {
+                    "yiicod\\cron\\": "/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "New BSD License"
+            ],
+            "authors": [
+                {
+                    "name": "Alexey Orlov",
+                    "email": "aaorlov88@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Auto block|unblock console command for the Yii2 framework. One command without duplicate.",
+            "support": {
+                "issues": "https://github.com/yiicod/yii2-cron/issues",
+                "source": "https://github.com/yiicod/yii2-cron/tree/master"
+            },
+            "time": "2017-05-25T12:50:20+00:00"
+        },
+        {
+            "name": "yiicod/yii2-socketio",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/yiicod/yii2-socketio.git",
+                "reference": "a3fbd6340dcf15d341f46cea9f81377b30a3c016"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/yiicod/yii2-socketio/zipball/a3fbd6340dcf15d341f46cea9f81377b30a3c016",
+                "reference": "a3fbd6340dcf15d341f46cea9f81377b30a3c016",
+                "shasum": ""
+            },
+            "require": {
+                "predis/predis": "~1.1.0",
+                "symfony/process": "~2.3|~3.0",
+                "yiicod/yii2-base": "*",
+                "yiicod/yii2-cron": "1.*"
+            },
+            "type": "yii2-extension",
+            "autoload": {
+                "psr-4": {
+                    "yiicod\\socketio\\": "/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "New BSD License"
+            ],
+            "authors": [
+                {
+                    "name": "Alexey Orlov",
+                    "email": "aaorlov88@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The simple and powerful socketio for the Yii2 framework",
+            "support": {
+                "issues": "https://github.com/yiicod/yii2-socketio/issues",
+                "source": "https://github.com/yiicod/yii2-socketio/tree/1.0.1"
+            },
+            "time": "2017-05-25T13:48:28+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.6.0"
+}

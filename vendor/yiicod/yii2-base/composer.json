@@ -1,0 +1,18 @@
+{
+    "name": "yiicod/yii2-base",
+    "description": "The base behaviors, helpers, etc. for the Yii2 framework",
+    "type": "yii-extension",
+    "license": "New BSD License",
+    "authors": [
+        {
+            "name": "Alexey Orlov",
+            "email": "aaorlov88@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "yiicod\\base\\": ""
+        }
+    }
+}

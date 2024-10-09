@@ -1,0 +1,5 @@
+{
+    "require": {
+        "yiicod/yii2-socketio": "^1.0"
+    }
+}
