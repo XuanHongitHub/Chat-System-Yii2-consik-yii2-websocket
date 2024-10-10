@@ -15,7 +15,8 @@ use yii\filters\VerbFilter;
 use yii\web\BadRequestHttpException;
 use yii;
 use Pusher\Pusher;
-
+use consik\yii2websocket\events\WSClientMessageEvent;
+// use consik\yii2websocket\WebSocketServer;
 
 class ChatController extends Controller
 {
@@ -251,7 +252,7 @@ class ChatController extends Controller
 
     // public function actionSendMessage()
     // {
-    //     Yii::$app->response->format = Response::FORMAT_JSON;
+    //     Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
     //     $request = Yii::$app->request;
     //     $chatId = $request->post('chatId');
@@ -259,7 +260,6 @@ class ChatController extends Controller
     //     $isRoom = $request->post('isRoom') === 'true';
 
     //     if (empty($messageContent)) {
-    //         Yii::error("Message content is empty", __METHOD__);
     //         return [
     //             'success' => false,
     //             'errors' => ['message' => ['Nội dung tin nhắn không được để trống.']]
@@ -305,28 +305,21 @@ class ChatController extends Controller
 
     //     $message->created_at = time();
     //     $message->updated_at = time();
-    //     Yii::error("Message prepared for saving: " . json_encode($message->attributes), __METHOD__);
 
     //     if ($message->save()) {
-    //         Yii::error("Message saved successfully with ID: " . $message->id, __METHOD__);
-
-    //         // $pusher = Yii::$app->pusher;
-
-    //         $pusher = new Pusher(
-    //             '9417daa5964067a88896',
-    //             '761a296ebcc2a0fed0ae',
-    //             '1874606',
-    //             [
-    //                 'cluster' => 'ap1',
-    //                 'useTLS' => true
+    //         $data = [
+    //             'message' => $messageContent,
+    //             'chatId' => $chatId,
+    //             'senderId' => [
+    //                 'id' => Yii::$app->user->id,
+    //                 'avatar' => Yii::$app->user->identity->avatar,
+    //                 'username' => Yii::$app->user->identity->username
     //             ]
-    //         );
+    //         ];
 
-    //         $data = ['message' => $messageContent, 'chatId' => $chatId, 'isRoom' => $isRoom];
-    //         try {
-    //             $pusher->trigger('chat-channel', 'new-message', $data);
-    //         } catch (\Exception $e) {
-    //             Yii::error("Pusher error: " . $e->getMessage(), __METHOD__);
+    //         // Gửi tin nhắn đến tất cả người dùng kết nối qua WebSocket
+    //         foreach ($this->getWebSocketServer()->clients as $client) {
+    //             $client->send(json_encode($data));
     //         }
 
     //         return [
@@ -341,6 +334,10 @@ class ChatController extends Controller
     //     }
     // }
 
+    // private function getWebSocketServer()
+    // {
+    //     return new \consik\yii2websocket\WebSocketServer();
+    // }
     public function actionGetSenderId($chatId)
     {
         $contact = Contacts::find()->where(['id' => $chatId])->one();

@@ -64,6 +64,7 @@ class ChatRoomUser extends \yii\db\ActiveRecord
     /**
      * Gets query for [[User]].
      *
+     * @return \yii\db\ActiveQuery|\app\models\query\UserQuery
      */
     public function getUser()
     {

@@ -8,7 +8,6 @@ use yii\bootstrap5\Html;
 use yii\bootstrap5\NavBar;
 
 ?>
-
 <nav class="menu">
     <ul class="items">
         <li class="item">
@@ -72,19 +71,19 @@ use yii\bootstrap5\NavBar;
             </div>
         </div>
         <?php foreach ($contacts as $contact): ?>
-            <div class="discussion <?= $contact['id'] == $activeContactId ? 'message-active' : '' ?>"
-                data-contact-id="<?= $contact['id'] ?>" onclick="openChat(<?= $contact['id'] ?>)">
-                <div class="photo" style="background-image: url(<?= Html::encode($contact['avatarUrl']) ?>);">
-                    <div class="online"></div>
-                </div>
-                <div class="desc-contact">
-                    <p class="name"><?= Html::encode($contact['username']) ?></p>
-                    <p class="message"><?= Html::encode($contact['lastMessageContent']) ?></p>
-                </div>
-                <div class="timer">
-                    <?= Html::encode($contact['relativeTime']) ?>
-                </div>
+        <div class="discussion <?= $contact['id'] == $activeContactId ? 'message-active' : '' ?>"
+            data-contact-id="<?= $contact['id'] ?>" onclick="openChat(<?= $contact['id'] ?>)">
+            <div class="photo" style="background-image: url(<?= Html::encode($contact['avatarUrl']) ?>);">
+                <div class="online"></div>
             </div>
+            <div class="desc-contact">
+                <p class="name"><?= Html::encode($contact['username']) ?></p>
+                <p class="message"><?= Html::encode($contact['lastMessageContent']) ?></p>
+            </div>
+            <div class="timer">
+                <?= Html::encode($contact['relativeTime']) ?>
+            </div>
+        </div>
         <?php endforeach; ?>
 
     </div>
@@ -136,25 +135,23 @@ use yii\bootstrap5\NavBar;
             </div>
         </div>
         <?php foreach ($roomData as $room): ?>
-            <?php if (isset($room['id'])): ?>
-                <div class="discussion" data-room-id="<?= Html::encode($room['id']) ?>"
-                    onclick="openChat(<?= Html::encode($room['id']) ?>, true)">
-                    <div class="photo" style="background-image: url(<?= Html::encode($room['avatarUrl']) ?>);">
-                    </div>
-                    <div class="desc-contact">
-                        <p class="name"><?= Html::encode($room['name']) ?></p>
-                        <p class="message"><?= Html::encode($room['lastMessageContent']) ?></p>
-                    </div>
-                    <div class="timer">
-                        <?= Html::encode($room['relativeTime']) ?>
-                    </div>
-                </div>
-            <?php endif; ?>
+        <?php if (isset($room['id'])): ?>
+        <div class="discussion" data-room-id="<?= Html::encode($room['id']) ?>"
+            onclick="openChat(<?= Html::encode($room['id']) ?>, true)">
+            <div class="photo" style="background-image: url(<?= Html::encode($room['avatarUrl']) ?>);">
+            </div>
+            <div class="desc-contact">
+                <p class="name"><?= Html::encode($room['name']) ?></p>
+                <p class="message"><?= Html::encode($room['lastMessageContent']) ?></p>
+            </div>
+            <div class="timer">
+                <?= Html::encode($room['relativeTime']) ?>
+            </div>
+        </div>
+        <?php endif; ?>
         <?php endforeach; ?>
     </div>
 </section>
-
-
 <?php
 
 ?>

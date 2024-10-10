@@ -38,15 +38,20 @@ $config = [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
+                    'logFile' => '@app/runtime/logs/app.log',
                 ],
             ],
         ],
         'db' => $db,
+        'webSocket' => [
+            'class' => 'consik\yii2websocket\WebSocketServer',
+            'port' => 4000,
+        ],
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-                'chat' => 'chat/index',
+                // 'chat' => 'chat/index',
                 'chat/get-contacts' => 'chat/get-contacts',
                 'chat/add-contact' => 'chat/add-contact',
                 'chat-room/add-room' => 'chat-room/add-room',
@@ -57,6 +62,7 @@ $config = [
                 'chat/message/send-message' => 'chat/message/send-message',
                 'chat/getSenderId' => 'chat/get-sender-id?chatId=${chatId}',
                 'POST pusher/auth' => 'site/pusher-auth',
+                'chat' => 'site/chat',
             ],
         ],
     ],
@@ -70,6 +76,7 @@ if (YII_ENV_DEV) {
         'class' => 'yii\debug\Module',
         // uncomment the following to add your IP if you are not connecting from localhost.
         //'allowedIPs' => ['127.0.0.1', '::1'],
+        'allowedIPs' => ['127.0.0.1', '::1', '172.18.0.1'],
     ];
 
     $config['bootstrap'][] = 'gii';

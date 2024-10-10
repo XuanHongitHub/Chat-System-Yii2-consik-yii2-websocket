@@ -95,7 +95,8 @@ class SiteController extends Controller
 
         $contactData = [];
         foreach ($contacts as $contact) {
-            $avatarUrl = !empty($contact->user->avatar) ? $contact->user->avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png';
+            $user = User::findOne($contact->contact_user_id);
+            $avatarUrl = !empty($user->avatar) ? $user->avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png';
 
             // Lấy tin nhắn cuối cùng cho từng contact
             $lastMessage = Messages::find()
@@ -142,15 +143,18 @@ class SiteController extends Controller
                 'relativeTime' => $relativeTime,
             ];
         }
-
         return $this->render('index', [
             'contacts' => $contactData,
             'roomData' => $roomData,
             'activeContactId' => $activeContactId,
+
         ]);
     }
 
-
+    public function actionChat()
+    {
+        return $this->render('chat');
+    }
     /**
      * Logs in a user.
      *
@@ -191,23 +195,23 @@ class SiteController extends Controller
      *
      * @return mixed
      */
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-            if ($model->sendEmail(Yii::$app->params['adminEmail'])) {
-                Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond to you as soon as possible.');
-            } else {
-                Yii::$app->session->setFlash('error', 'There was an error sending your message.');
-            }
+    // public function actionContact()
+    // {
+    //     $model = new ContactForm();
+    //     if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+    //         if ($model->sendEmail(Yii::$app->params['adminEmail'])) {
+    //             Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond to you as soon as possible.');
+    //         } else {
+    //             Yii::$app->session->setFlash('error', 'There was an error sending your message.');
+    //         }
 
-            return $this->refresh();
-        }
+    //         return $this->refresh();
+    //     }
 
-        return $this->render('contact', [
-            'model' => $model,
-        ]);
-    }
+    //     return $this->render('contact', [
+    //         'model' => $model,
+    //     ]);
+    // }
 
     /**
      * Displays about page.

@@ -1,10 +1,12 @@
-// Lấy Csrf Token
-
-
 function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 }
-
+document.getElementById('messageInput').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('sendMessageButton').click();
+    }
+});
 // Tìm Users
 $(document).ready(function () {
     $('#contactUsername').on('input', function () {
@@ -168,32 +170,33 @@ $(document).ready(function () {
 
 // Active Contact Chat
 function openChat(id, isRoom = false) {
+    // Cập nhật id của chat hiện tại và kiểm tra loại chat (phòng hay contact)
     updateChatId(id, isRoom);
 
-    if (isRoom) {
-        $.ajax({
-            url: '/chat/messages/' + id,
-            method: 'GET',
-            success: function (data) {
-                updateChatUI(data, true);
-            },
-            error: function () {
-                console.log('Error loading room messages');
-            }
-        });
+    // Cập nhật tên contact hoặc phòng trong phần tử #chatTitle
+    let name = isRoom ? document.querySelector(`.discussion[data-room-id="${id}"] .name`).innerText :
+        document.querySelector(`.discussion[data-contact-id="${id}"] .name`).innerText;
+
+    if (name) {
+        document.querySelector('#chatTitle').innerText = name;
     } else {
-        $.ajax({
-            url: '/chat/messages/' + id,
-            method: 'GET',
-            success: function (data) {
-                updateChatUI(data);
-            },
-            error: function () {
-                console.log('Error loading contact messages');
-            }
-        });
+        document.querySelector('#chatTitle').innerText = 'Không có tên';
     }
+
+    // Gửi yêu cầu lấy tin nhắn
+    const url = isRoom ? '/chat/messages/' + id : '/chat/messages/' + id;
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (data) {
+            updateChatUI(data, isRoom);
+        },
+        error: function () {
+            console.log('Lỗi tải tin nhắn');
+        }
+    });
 }
+
 
 // Cập nhật chatId + Check isRoom
 function updateChatId(chatId, isRoom) {
@@ -252,22 +255,25 @@ function updateChatUI(data, isRoom = false) {
     var chatName = isRoom ? data.roomName : data.contactName;
     $('.header-chat .name').text(chatName);
 }
-
+let socket;
 $(document).ready(function () {
-    Pusher.logToConsole = true;
 
-    var pusher = new Pusher('9417daa5964067a88896', {
-        cluster: 'ap1',
-        forceTLS: true
-    });
 
-    var channel = pusher.subscribe('chat-channel');
-    channel.bind('new-message', async function (data) {
+    socket = new WebSocket('ws://localhost:3000'); // Kết nối đến WebSocket server
+
+    socket.onopen = function () {
+        console.log('Kết nối đến WebSocket server thành công.');
+    };
+
+    socket.onmessage = function (event) {
+
+        // console.log('Response:' + event.data);
+        const data = JSON.parse(event.data); // Giả sử dữ liệu gửi qua là JSON
+        const senderId = currentUserId; // Lấy ID người gửi từ dữ liệu
+        const message = data.message;
+        console.log("Sender ID:", senderId);
+        console.log("Messages Content:", data.message);
         console.log("Current User ID:", currentUserId);
-
-        // Lấy senderId từ chatId bằng cách gọi getSenderId
-        const senderId = await getSenderId(data.chatId); // Sử dụng await để đợi
-        console.log("Sender ID:", senderId); // Sử dụng senderId từ dữ liệu
 
         var newMessage;
         var lastSenderId = null;
@@ -277,20 +283,18 @@ $(document).ready(function () {
                 newMessage = `
                     <div class="message">
                         <div class="response">
-                            <p class="text">${data.message} </p>
+                            <p class="text">${message} </p>
                         </div>
                     </div>
-                    <p class="response-time time">Just now</p>
                 `;
                 lastSenderId = senderId;
             } else {
                 newMessage = `
                     <div class="message text-only">
                         <div class="response">
-                            <p class="text">${data.message} </p>
+                            <p class="text">${message} </p>
                         </div>
                     </div>
-                    <p class="response-time time">Just now</p>
                 `;
             }
         } else {
@@ -298,27 +302,25 @@ $(document).ready(function () {
             if (senderId !== lastSenderId) {
                 newMessage = `
                     <div class="message">
-                            <div class="photo" style="background-image: url(${senderId.avatar ? senderId.avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png'})" class="avatar" alt="${senderId.username}"></div>
-                            <div class="online"></div>
-                        </div>
-                            <p class="text">${data.message}</p>
+                        <div class="photo" style="background-image: url(${senderId.avatar ? senderId.avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png'})" class="avatar" alt="${senderId.username}"></div>
+                        <div class="online"></div>
                     </div>
-                    <p class="response-time time">Just now</p>
+                    <p class="text">${message}</p>
+                    </div>
                 `;
                 lastSenderId = senderId;
             } else {
                 newMessage = `
                     <div class="message">
-                            <p class="text">${data.message}</p>
+                        <p class="text">${message}</p>
                     </div>
-                    <p class="response-time time">Just now</p>
                 `;
             }
         }
 
         $('#messagesChat').append(newMessage);
         messagesChat.scrollTop = messagesChat.scrollHeight;
-    });
+    };
 
     $('#sendMessageButton').on('click', function () {
         const chatId = document.getElementById('currentChatId').value;
@@ -330,30 +332,25 @@ $(document).ready(function () {
             return;
         }
 
-        $.ajax({
-            url: 'chat/send-message',
-            method: 'POST',
-            headers: {
-                'X-CSRF-Token': getCsrfToken()
-            },
-            data: {
-                chatId: chatId,
-                message: message,
-                isRoom: isRoom,
-            },
-            success: function (response) {
-                if (response.success) {
-                    document.getElementById('messageInput').value = '';
-                } else {
-                    console.error('Error sending message:', response.errors);
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('AJAX Error:', error);
-            },
-        });
+        // let data = JSON.stringify({
+        //     chatId: chatId,
+        //     message: message,
+        //     isRoom: isRoom,
+        // });
+
+        socket.send(JSON.stringify({
+            chatId: chatId,
+            message: message,
+            isRoom: isRoom,
+        }));
+
+        // Xóa Tin nhắn trong input
+        document.getElementById('messageInput').value = '';
+
     });
 });
+
+
 function getSenderId(chatId) {
     return fetch(`/chat/get-sender-id?chatId=${chatId}`)
         .then(response => response.json())
@@ -371,24 +368,3 @@ function getSenderId(chatId) {
             return null; // Hoặc bạn có thể throw một lỗi
         });
 }
-
-// function fetchNewMessages() {
-//     const chatId = document.getElementById('currentChatId').value;
-//     const isRoom = document.getElementById('isRoom').value === "true";
-
-//     if (chatId && chatId.trim() !== "") {
-//         $.ajax({
-//             url: `/chat/messages/${chatId}`,
-//             method: 'GET',
-//             success: function (data) {
-//                 updateChatUI(data, isRoom);
-//             },
-//             error: function () {
-//                 console.log('Error loading new messages');
-//             }
-//         });
-//     }
-// }
-
-// setInterval(fetchNewMessages, 2000);
-

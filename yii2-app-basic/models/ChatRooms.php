@@ -87,6 +87,7 @@ class ChatRooms extends \yii\db\ActiveRecord
     /**
      * Gets query for [[CreatedBy]].
      *
+     * @return \yii\db\ActiveQuery|\app\models\query\UserQuery
      */
     public function getCreatedBy()
     {

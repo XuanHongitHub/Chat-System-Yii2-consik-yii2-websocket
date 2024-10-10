@@ -81,6 +81,7 @@ class Messages extends \yii\db\ActiveRecord
     /**
      * Gets query for [[Recipient]].
      *
+     * @return \yii\db\ActiveQuery|\app\models\query\UserQuery
      */
     public function getRecipient()
     {

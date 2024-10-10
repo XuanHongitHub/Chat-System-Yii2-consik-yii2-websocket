@@ -8,58 +8,88 @@ use yii\base\Model;
 /**
  * ContactForm is the model behind the contact form.
  */
-class ContactForm extends Model
+class Contacts extends \yii\db\ActiveRecord
 {
-    public $name;
-    public $email;
-    public $subject;
-    public $body;
-    public $verifyCode;
-
+    /**
+     * {@inheritdoc}
+     */
+    public static function tableName()
+    {
+        return 'contacts';
+    }
 
     /**
-     * @return array the validation rules.
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            // name, email, subject and body are required
-            [['name', 'email', 'subject', 'body'], 'required'],
-            // email has to be a valid email address
-            ['email', 'email'],
-            // verifyCode needs to be entered correctly
-            ['verifyCode', 'captcha'],
+            [['user_id', 'contact_user_id', 'created_at', 'updated_at'], 'required'],
+            [['user_id', 'contact_user_id', 'created_at', 'updated_at'], 'integer'],
+            [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
+            [['contact_user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['contact_user_id' => 'id']],
         ];
     }
 
     /**
-     * @return array customized attribute labels
+     * {@inheritdoc}
      */
     public function attributeLabels()
     {
         return [
-            'verifyCode' => 'Verification Code',
+            'id' => 'ID',
+            'user_id' => 'User ID',
+            'contact_user_id' => 'Contact User ID',
+            'created_at' => 'Created At',
+            'updated_at' => 'Updated At',
         ];
     }
 
     /**
-     * Sends an email to the specified email address using the information collected by this model.
-     * @param string $email the target email address
-     * @return bool whether the model passes validation
+     * Gets query for [[ContactUser]].
+     *
      */
-    public function contact($email)
+    public function getContactUser()
     {
-        if ($this->validate()) {
-            Yii::$app->mailer->compose()
-                ->setTo($email)
-                ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
-                ->setReplyTo([$this->email => $this->name])
-                ->setSubject($this->subject)
-                ->setTextBody($this->body)
-                ->send();
+        return $this->hasOne(User::class, ['id' => 'contact_user_id']);
+    }
 
-            return true;
-        }
-        return false;
+    /**
+     * Gets query for [[User]].
+     *
+     */
+    public function getUser()
+    {
+        return $this->hasOne(User::class, ['id' => 'user_id']);
+    }
+
+    /**
+     * {@inheritdoc}
+     * @return \app\models\query\ContactsQuery the active query used by this AR class.
+     */
+    public static function find()
+    {
+        return new \app\models\query\ContactsQuery(get_called_class());
+    }
+    public function getChatRoom()
+    {
+        return $this->hasOne(ChatRooms::class, ['id' => 'chat_room_id']);
+    }
+    public function getLastMessage()
+    {
+        return Messages::find()
+            ->where([
+                'or',
+                ['user_id' => Yii::$app->user->id, 'recipient_id' => $this->contact_user_id],
+                ['user_id' => $this->contact_user_id, 'recipient_id' => Yii::$app->user->id]
+            ])
+            ->orderBy(['created_at' => SORT_DESC])
+            ->limit(1)
+            ->one();
+    }
+
+    public function getMessages()
+    {
+        return $this->hasMany(Messages::class, ['recipient_id' => 'id']);
     }
 }

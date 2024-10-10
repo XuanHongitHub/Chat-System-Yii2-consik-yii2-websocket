@@ -5,27 +5,31 @@ namespace app\commands;
 use consik\yii2websocket\events\WSClientMessageEvent;
 use consik\yii2websocket\WebSocketServer;
 use yii\console\Controller;
+use app\daemons\ChatServer;
+use app\models\User;
+use app\models\Contacts;
+use app\models\Messages;
+use yii\web\Response;
+use app\models\ChatRooms;
+use app\models\ChatRoomUser;
+use Codeception\Lib\Interfaces\Web;
+use yii;
 
 class ServerController extends Controller
+
 {
-    public function actionStart()
+
+    public function actionStart($port = 4000)
+
     {
-        $server = new WebSocketServer();
-        $server->port = 4000; //This port must be busy by WebServer and we handle an error
 
-        $server->on(WebSocketServer::EVENT_WEBSOCKET_OPEN_ERROR, function ($e) use ($server) {
-            echo "Error opening port " . $server->port . "\n";
-            $server->port += 1; //Try next port to open
-            $server->start();
-        });
+        $server = new ChatServer();
 
-        $server->on(WebSocketServer::EVENT_WEBSOCKET_OPEN, function ($e) use ($server) {
-            echo "Server started at port " . $server->port;
-        });
+        if ($port) {
 
-        $server->on(WebSocketServer::EVENT_CLIENT_MESSAGE, function (WSClientMessageEvent $e) {
-            $e->client->send("hello");
-        });
+            $server->port = $port;
+        }
+
         $server->start();
     }
 }
