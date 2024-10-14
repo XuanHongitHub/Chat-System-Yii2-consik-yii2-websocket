@@ -16,11 +16,9 @@ use Codeception\Lib\Interfaces\Web;
 use yii;
 
 class ServerController extends Controller
-
 {
 
-    public function actionStart($port = 4000)
-
+    public function actionStart($port = null)
     {
 
         $server = new ChatServer();

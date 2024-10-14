@@ -64,18 +64,19 @@ class ChatController extends Controller
 
     public function actionGetContacts()
     {
-        $userId = Yii::$app->user->id;
-        $contacts = Contacts::find()->where(['user_id' => $userId])->with('contactUser')->all();
+        $contacts = Contacts::find()->with('contactUser')->all();
 
         $contactData = [];
         foreach ($contacts as $contact) {
-            $contactUser = User::findOne($contact->contact_user_id);
-            if ($contactUser) {
-                $contactData[] = [
-                    'id' => $contactUser->id,
-                    'username' => $contactUser->username
-                ];
-            }
+            $user = User::findOne($contact->contact_user_id);
+            $avatarUrl = !empty($user->avatar) ? $user->avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png';
+
+            $contactData[] = [
+                'id' => $contact->id,
+                'avatarUrl' => $avatarUrl,
+                'username' => $user ? $user->username : 'Unknown',
+                'recipientId' => $contact->contact_user_id,
+            ];
         }
 
         return $this->asJson($contactData);
@@ -150,7 +151,7 @@ class ChatController extends Controller
                     if (isset($member['id']) && is_int($member['id'])) {
                         $chatRoomUser = new ChatRoomUser();
                         $chatRoomUser->chat_room_id = $chatRoom->id;
-                        $chatRoomUser->user_id = (int)$member['id'];
+                        $chatRoomUser->user_id = (int) $member['id'];
                         $chatRoomUser->joined_at = time();
 
                         if (!$chatRoomUser->save()) {
@@ -249,110 +250,76 @@ class ChatController extends Controller
         return $this->asJson(['messages' => [], 'error' => 'Contact or Room not found.']);
     }
 
-
-    // public function actionSendMessage()
-    // {
-    //     Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-
-    //     $request = Yii::$app->request;
-    //     $chatId = $request->post('chatId');
-    //     $messageContent = $request->post('message');
-    //     $isRoom = $request->post('isRoom') === 'true';
-
-    //     if (empty($messageContent)) {
-    //         return [
-    //             'success' => false,
-    //             'errors' => ['message' => ['Nội dung tin nhắn không được để trống.']]
-    //         ];
-    //     }
-
-    //     $message = new Messages();
-    //     $message->content = $messageContent;
-    //     $message->user_id = Yii::$app->user->id;
-
-    //     if ($isRoom) {
-    //         $message->chat_room_id = $chatId;
-    //         $message->recipient_id = null;
-
-    //         if (!ChatRooms::find()->where(['id' => $chatId])->exists()) {
-    //             return [
-    //                 'success' => false,
-    //                 'errors' => ['chat_room_id' => ['ID phòng chat không hợp lệ.']]
-    //             ];
-    //         }
-    //     } else {
-    //         $contact = Contacts::find()->where(['id' => $chatId])->one();
-
-    //         if ($contact) {
-    //             $recipientId = $contact->contact_user_id;
-
-    //             if (!User::find()->where(['id' => $recipientId])->exists()) {
-    //                 return [
-    //                     'success' => false,
-    //                     'errors' => ['recipient_id' => ['ID người nhận không hợp lệ.']]
-    //                 ];
-    //             }
-
-    //             $message->recipient_id = $recipientId;
-    //             $message->chat_room_id = null;
-    //         } else {
-    //             return [
-    //                 'success' => false,
-    //                 'errors' => ['recipient_id' => ['Liên hệ không tìm thấy.']]
-    //             ];
-    //         }
-    //     }
-
-    //     $message->created_at = time();
-    //     $message->updated_at = time();
-
-    //     if ($message->save()) {
-    //         $data = [
-    //             'message' => $messageContent,
-    //             'chatId' => $chatId,
-    //             'senderId' => [
-    //                 'id' => Yii::$app->user->id,
-    //                 'avatar' => Yii::$app->user->identity->avatar,
-    //                 'username' => Yii::$app->user->identity->username
-    //             ]
-    //         ];
-
-    //         // Gửi tin nhắn đến tất cả người dùng kết nối qua WebSocket
-    //         foreach ($this->getWebSocketServer()->clients as $client) {
-    //             $client->send(json_encode($data));
-    //         }
-
-    //         return [
-    //             'success' => true,
-    //             'data' => $message,
-    //         ];
-    //     } else {
-    //         return [
-    //             'success' => false,
-    //             'errors' => $message->getErrors(),
-    //         ];
-    //     }
-    // }
-
-    // private function getWebSocketServer()
-    // {
-    //     return new \consik\yii2websocket\WebSocketServer();
-    // }
-    public function actionGetSenderId($chatId)
+    public function actionGetSenderId($userId)
     {
-        $contact = Contacts::find()->where(['id' => $chatId])->one();
+        $user = User::find()->where(['id' => $userId])->one();
 
-        if ($contact) {
-            $userId = $contact->user_id; // Lấy user_id từ bản ghi
-            return $this->asJson(['user_id' => $userId]);
+        if ($user) {
+            $userId = $user->id;
+            $userName = $user->username;
+            $avatar = $user->avatar;
+
+            return $this->asJson([
+                'user_id' => $userId,
+                'username' => $userName,
+                'avatar' => $avatar
+            ]);
         } else {
-            return $this->asJson(['error' => 'Chat not found']);
+            return $this->asJson(['error' => 'User not found']);
         }
     }
-    // public function actionGetAllUsers()
-    // {
-    //     $users = User::find()->all(); 
 
-    //     return $this->asJson($users);
-    // }
+    public function actionSearchRoom($roomName)
+    {
+        $rooms = ChatRooms::find()
+            ->where(['like', 'name', $roomName])
+            ->all();
+
+        $result = [];
+        foreach ($rooms as $room) {
+            $result[] = [
+                'id' => $room->id,
+                'name' => $room->name,
+                'visibility' => $room->visibility ? '1' : '0',
+            ];
+        }
+
+        return $this->asJson($result);
+    }
+    public function actionJoinRoom()
+    {
+        $roomId = Yii::$app->request->post('roomId');
+
+        if (!$roomId) {
+            return $this->asJson(['status' => 'error', 'message' => 'Missing required parameters: roomId']);
+        }
+
+        $currentUserId = Yii::$app->user->id;
+        Yii::error("Current User ID: " . $currentUserId, __METHOD__);
+        Yii::error("Attempting to join room with ID: " . $roomId, __METHOD__);
+
+        $chatRoom = ChatRooms::findOne($roomId);
+        if (!$chatRoom) {
+            return $this->asJson(['status' => 'error', 'message' => 'Phòng chat không tồn tại.']);
+        }
+
+        $existingMember = ChatRoomUser::findOne(['chat_room_id' => $roomId, 'user_id' => $currentUserId]);
+        if ($existingMember) {
+            return $this->asJson(['status' => 'info', 'message' => 'Bạn đã ở trong phòng chat này.']);
+        }
+
+        $chatRoomUser = new ChatRoomUser();
+        $chatRoomUser->chat_room_id = $roomId;
+        $chatRoomUser->user_id = $currentUserId;
+        $chatRoomUser->joined_at = time();
+
+        if ($chatRoomUser->save()) {
+            return $this->asJson(['status' => 'success', 'message' => 'Tham gia phòng thành công.']);
+        } else {
+            Yii::error('Failed to join chat room: ' . json_encode($chatRoomUser->getErrors()), __METHOD__);
+            return $this->asJson(['status' => 'error', 'message' => 'Có lỗi xảy ra khi tham gia phòng.']);
+        }
+    }
+
+
 }

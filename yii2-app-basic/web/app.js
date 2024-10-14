@@ -105,40 +105,56 @@ $(document).ready(function () {
         });
     });
 });
-
-// Get user [Tagify] ---
-var tagify;
-
-document.addEventListener('DOMContentLoaded', function () {
-    var input = document.querySelector('#members');
-    tagify = new Tagify(input);
-
-    fetch('/chat/get-contacts')
-        .then(response => response.json())
-        .then(data => {
-            if (data && Array.isArray(data)) {
-                const tags = data.map(contact => ({
-                    value: contact.username,
-                    id: contact.id
-                }));
-                tagify.addTags(tags);
-            } else {
-                console.error('Data format is not correct:', data);
-            }
-        })
-        .catch(error => console.error('Error fetching contacts:', error));
-});
-
 // Add Chat Rooms
 $(document).ready(function () {
+    $('#members').on('input', function () {
+        let query = $(this).val();
+        if (query.length >= 1) {
+            $.ajax({
+                url: '/chat/search-user',
+                method: 'GET',
+                data: { username: query },
+                success: function (data) {
+                    let suggestions = $('#memberSuggestions');
+                    suggestions.empty();
+                    if (data.length) {
+                        suggestions.show();
+                        data.forEach(function (user) {
+                            suggestions.append(`
+                                <div class="friend-item d-flex align-items-center mb-2">
+                                    <div class="avatar-container me-2">
+                                        <img src="${user.avatar ? user.avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png'}" class="avatar" alt="${user.username}">
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="friend-name" data-username="${user.username}">${user.username}</div>
+                                    </div>
+                                    <input type="checkbox" class="select-member ms-2" data-username="${user.username}" data-user-id="${user.id}">
+                                </div>
+                            `);
+                        });
+                    } else {
+                        suggestions.hide();
+                    }
+                },
+                error: function () {
+                    console.error("Error searching users.");
+                }
+            });
+        } else {
+            $('#memberSuggestions').hide();
+        }
+    });
+
     $('#addRoomButton').on('click', function (event) {
         event.preventDefault();
-
         var roomName = $('#roomName').val();
-        var members = tagify.value;
+        var selectedMembers = [];
 
-        var memberData = members.map(function (member) {
-            return { id: member.id };
+        // Collect selected members from checked checkboxes
+        $('#memberSuggestions .select-member:checked').each(function () {
+            let userId = $(this).data('user-id');
+            let username = $(this).data('username');
+            selectedMembers.push({ id: userId, username: username });
         });
 
         $.ajax({
@@ -149,9 +165,10 @@ $(document).ready(function () {
             },
             data: {
                 room_name: roomName,
-                members: JSON.stringify(memberData)
+                members: JSON.stringify(selectedMembers)
             },
             success: function (response) {
+                fetchRooms();
                 if (response.status === 'success') {
                     $('#response-message').html('<div class="alert alert-success">' + response.message + '</div>');
                     setTimeout(function () {
@@ -168,15 +185,78 @@ $(document).ready(function () {
     });
 });
 
-// Active Contact Chat
-function openChat(id, isRoom = false) {
-    // Cập nhật id của chat hiện tại và kiểm tra loại chat (phòng hay contact)
-    updateChatId(id, isRoom);
+$(document).ready(function () {
+    $('#searchRoomName').on('input', function () {
+        var query = $(this).val();
+        if (query.length > 1) {
+            $.ajax({
+                url: '/chat/search-room',
+                type: 'GET',
+                headers: {
+                    'X-CSRF-Token': getCsrfToken()
+                },
+                data: { roomName: query },
+                success: function (data) {
+                    var roomList = $('#roomResults');
+                    roomList.empty();
 
-    // Cập nhật tên contact hoặc phòng trong phần tử #chatTitle
+                    if (data.length > 0) {
+                        data.forEach(function (room) {
+                            if (room.visibility === '1') {
+                                roomList.append('<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">' +
+                                    '<span><strong>' + room.name + '</strong><br>' +
+                                    '<span>Visibility: ' + (room.visibility === '1' ? 'Public' : 'Private') + '</span></span>' +
+                                    '<button class="btn btn-primary btn-sm" onclick="joinRoom(' + room.id + ')">Join Room</button>' +
+                                    '</div>');
+                            }
+                        });
+                    } else {
+                        roomList.append('<p class="text-muted">Không tìm thấy phòng phù hợp</p>');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error occurred:', error);
+                }
+            });
+        } else {
+            $('#roomResults').empty();
+        }
+    });
+});
+
+function joinRoom(roomId) {
+    $.ajax({
+        url: '/chat/join-room', // URL đến action tham gia phòng
+        type: 'POST',
+        headers: {
+            'X-CSRF-Token': getCsrfToken()
+        },
+        data: { roomId: roomId },
+        success: function (response) {
+            fetchRooms();
+            if (response.status === 'success') {
+                alert(response.message);
+                // Cập nhật lại danh sách hoặc làm gì đó nếu cần
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Error occurred:', error);
+        }
+    });
+}
+
+
+// Active Contact Chat
+function openChat(id, recipientId = null, relatedId = null, isRoom = false) {
+    updateChatId(id, recipientId, relatedId, isRoom);
+
     let name = isRoom ? document.querySelector(`.discussion[data-room-id="${id}"] .name`).innerText :
         document.querySelector(`.discussion[data-contact-id="${id}"] .name`).innerText;
 
+
+    // Kiểm tra xem name có hợp lệ không
     if (name) {
         document.querySelector('#chatTitle').innerText = name;
     } else {
@@ -197,11 +277,12 @@ function openChat(id, isRoom = false) {
     });
 }
 
-
 // Cập nhật chatId + Check isRoom
-function updateChatId(chatId, isRoom) {
+function updateChatId(chatId, recipientId, relatedId, isRoom) {
     document.getElementById('currentChatId').value = chatId;
     document.getElementById('isRoom').value = isRoom;
+    document.getElementById('recipientId').value = recipientId;
+    document.getElementById('relatedId').value = relatedId;
 }
 
 // Hiển thị Messages
@@ -255,148 +336,5 @@ function updateChatUI(data, isRoom = false) {
     var chatName = isRoom ? data.roomName : data.contactName;
     $('.header-chat .name').text(chatName);
 }
-let socket;
-$(document).ready(function () {
 
 
-    socket = new WebSocket('ws://localhost:3000'); // Kết nối đến WebSocket server
-
-    socket.onopen = function () {
-        console.log('Kết nối đến WebSocket server thành công.');
-    };
-
-    socket.onmessage = function (event) {
-
-        // console.log('Response:' + event.data);
-        const data = JSON.parse(event.data); // Giả sử dữ liệu gửi qua là JSON
-        const senderId = currentUserId; // Lấy ID người gửi từ dữ liệu
-        const message = data.message;
-        console.log("Sender ID:", senderId);
-        console.log("Messages Content:", data.message);
-        console.log("Current User ID:", currentUserId);
-
-        var newMessage;
-        var lastSenderId = null;
-        if (senderId == currentUserId) {
-            // Tin nhắn của người dùng hiện tại
-            if (senderId !== lastSenderId) {
-                newMessage = `
-                    <div class="message">
-                        <div class="response">
-                            <p class="text">${message} </p>
-                        </div>
-                    </div>
-                `;
-                lastSenderId = senderId;
-            } else {
-                newMessage = `
-                    <div class="message text-only">
-                        <div class="response">
-                            <p class="text">${message} </p>
-                        </div>
-                    </div>
-                `;
-            }
-        } else {
-            // Tin nhắn từ người khác
-            if (senderId !== lastSenderId) {
-                newMessage = `
-                    <div class="message">
-                        <div class="photo" style="background-image: url(${senderId.avatar ? senderId.avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png'})" class="avatar" alt="${senderId.username}"></div>
-                        <div class="online"></div>
-                    </div>
-                    <p class="text">${message}</p>
-                    </div>
-                `;
-                lastSenderId = senderId;
-            } else {
-                newMessage = `
-                    <div class="message">
-                        <p class="text">${message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        $('#messagesChat').append(newMessage);
-        messagesChat.scrollTop = messagesChat.scrollHeight;
-    };
-
-    $('#sendMessageButton').on('click', function () {
-        const chatId = document.getElementById('currentChatId').value;
-        const message = document.getElementById('messageInput').value;
-        const isRoom = document.getElementById('isRoom').value === "true";
-
-        if (!chatId || !message) {
-            console.error('Chat ID và nội dung tin nhắn không được để trống.');
-            return;
-        }
-
-        // let data = JSON.stringify({
-        //     chatId: chatId,
-        //     message: message,
-        //     isRoom: isRoom,
-        // });
-
-        socket.send(JSON.stringify({
-            chatId: chatId,
-            message: message,
-            isRoom: isRoom,
-        }));
-
-        // Xóa Tin nhắn trong input
-        document.getElementById('messageInput').value = '';
-
-    });
-});
-
-
-function getSenderId(chatId) {
-    return fetch(`/chat/get-sender-id?chatId=${chatId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.user_id) {
-                console.log("User ID:", data.user_id);
-                return data.user_id; // Trả về user_id
-            } else {
-                console.error(data.error); // Xử lý lỗi
-                return null; // Hoặc bạn có thể throw một lỗi
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            return null; // Hoặc bạn có thể throw một lỗi
-        });
-}
-
-
-
-
-$(function () {
-    var chat = new WebSocket("ws://localhost:3000");
-    chat.onmessage = function (e) {
-        var response = JSON.parse(e.data);
-        if (response.type && response.type == "chat") {
-            if (response.from == "' . Yii::$app->user->identity->username . '") {
-                $("#chat").append("<div class=\"direct-chat-msg\"><div class=\"direct-chat-infos clearfix\"><span class=\"direct-chat-name float-left\">" + response.from + " </span><span class=\"direct-chat-timestamp float-right\">" + response.date + "</span></div><i class=\"direct-chat-img fas fa-user-circle\" style=\"font-size:40px\"></i><div class=\"direct-chat-text\">" + response.message + "</div></div>");
-            } else {
-                $("#chat").append("<div class=\"direct-chat-msg right\"><div class=\"direct-chat-infos clearfix\"><span class=\"direct-chat-name float-right\">" + response.from + " </span><span class=\"direct-chat-timestamp float-left\">" + response.date + "</span></div><i class=\"direct-chat-img fas fa-user-circle\" style=\"font-size:40px\"></i><div class=\"direct-chat-text\">" + response.message + "</div></div>");
-            }
-        } else if (response.message) {
-            console.log(response.message);
-        }
-    };
-    chat.onopen = function (e) {
-        console.log("Connection established! Please, set your username.");
-        chat.send(JSON.stringify({ "action": "setName", "name": "' . Yii::$app->user->identity->username . '" }));
-    };
-    $("#btnSend").click(function () {
-        if ($("#message").val()) {
-            chat.send(JSON.stringify({ "action": "chat", "message": $("#message").val() }));
-            $("#message").val("");
-            console.log(chat);
-        } else {
-            alert("' . Yii::t('app', 'Enter the message') . '");
-        }
-    });
-})

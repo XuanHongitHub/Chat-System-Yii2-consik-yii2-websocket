@@ -91,7 +91,10 @@ class SiteController extends Controller
             ->all();
 
         $activeContactId = null;
-        $chatRooms = ChatRooms::find()->all();
+        $chatRooms = ChatRooms::find()
+            ->innerJoin('chat_room_user', 'chat_rooms.id = chat_room_user.chat_room_id')
+            ->where(['chat_room_user.user_id' => $currentUserId])
+            ->all();
 
         $contactData = [];
         foreach ($contacts as $contact) {
@@ -111,13 +114,18 @@ class SiteController extends Controller
 
             $lastMessageContent = $lastMessage ? $lastMessage->content : 'No messages';
             $relativeTime = $lastMessage ? Yii::$app->formatter->asRelativeTime($lastMessage->created_at) : '';
-
+            $related = Contacts::find()
+                ->where(['user_id' => $contact->contact_user_id])
+                ->one();
+            $relatedId = $related->id;
             $contactData[] = [
                 'id' => $contact->id,
                 'avatarUrl' => $avatarUrl,
                 'username' => $contact->contactUser->username,
                 'lastMessageContent' => $lastMessageContent,
                 'relativeTime' => $relativeTime,
+                'recipientId' => $contact->contact_user_id,
+                'relatedId' => $relatedId,
             ];
         }
 

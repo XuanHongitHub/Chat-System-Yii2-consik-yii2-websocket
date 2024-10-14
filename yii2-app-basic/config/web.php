@@ -9,12 +9,13 @@ $config = [
     'bootstrap' => ['log'],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
-        '@npm'   => '@vendor/npm-asset',
+        '@npm' => '@vendor/npm-asset',
     ],
     'components' => [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => '4cwGu6IvHYlwQ1CS7YTaAZ3Lcjx6obTD',
+            'enableCsrfValidation' => true,
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
@@ -56,13 +57,10 @@ $config = [
                 'chat/add-contact' => 'chat/add-contact',
                 'chat-room/add-room' => 'chat-room/add-room',
                 'search-user' => 'chat/search-user',
-                'chat/contact/messages/<id:\d+>' => 'chat/contact/messages',
+                'search-room' => 'chat/search-room',
                 'chat/messages/<id:\d+>' => 'chat/messages',
-                'chat/sendMessage' => 'chat/send-message',
-                'chat/message/send-message' => 'chat/message/send-message',
-                'chat/getSenderId' => 'chat/get-sender-id?chatId=${chatId}',
-                'POST pusher/auth' => 'site/pusher-auth',
-                'chat' => 'site/chat',
+                'chat/getSenderId' => 'chat/get-sender-id?userId=${userId}',
+                'chat/join-room' => 'chat/join-room',
             ],
         ],
     ],

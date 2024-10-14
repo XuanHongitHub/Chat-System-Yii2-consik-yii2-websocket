@@ -72,7 +72,9 @@ use yii\bootstrap5\NavBar;
         </div>
         <?php foreach ($contacts as $contact): ?>
         <div class="discussion <?= $contact['id'] == $activeContactId ? 'message-active' : '' ?>"
-            data-contact-id="<?= $contact['id'] ?>" onclick="openChat(<?= $contact['id'] ?>)">
+            data-contact-id="<?= $contact['id'] ?>" data-recipient-id="<?= $contact['recipientId'] ?>"
+            data-related-id="<?= $contact['relatedId'] ?>"
+            onclick="openChat(<?= $contact['id'] ?>, <?= $contact['recipientId'] ?>, <?= $contact['relatedId'] ?> )">
             <div class="photo" style="background-image: url(<?= Html::encode($contact['avatarUrl']) ?>);">
                 <div class="online"></div>
             </div>
@@ -90,12 +92,17 @@ use yii\bootstrap5\NavBar;
     <div class="room-list">
         <div class="header-title">
             <span>Rooms</span>
-            <div icon="outline-add-new-contact-2" data-bs-toggle="modal" data-bs-target="#addRoomModal" class=""
-                title="Thêm bạn">
+            <div icon="outline-add-new-contact-2" data-bs-toggle="modal" data-bs-target="#searchRoomModal"
+                title="Tìm phòng">
+                <i class="fa fa-plus pre"></i>
+            </div>
+            <div icon="outline-add-new-contact-2" data-bs-toggle="modal" data-bs-target="#addRoomModal"
+                title="Thêm phòng">
                 <i class="fa fa-plus pre"></i>
             </div>
         </div>
-        <!-- Modal -->
+
+        <!-- Modal Thêm Phòng -->
         <div id="addRoomModal" tabindex="-1" aria-labelledby="addRoomModalLabel" aria-hidden="true" class="modal fade">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -112,11 +119,15 @@ use yii\bootstrap5\NavBar;
                                 <input type="text" class="form-control" name="roomName" id="roomName"
                                     placeholder="Enter room name">
                             </div>
+
                             <div class="form-group mb-4">
                                 <label for="members" class="fw-medium">Members <span
                                         class="text-danger">*</span></label>
-                                <input name="members" placeholder="Enter members" class="form-control" id="members">
+                                <input name="members" placeholder="Enter members" class="form-control mb-3"
+                                    id="members">
+                                <div id="memberSuggestions" class="list-group" style="display:none;"></div>
                             </div>
+
                             <div class="form-group mb-4">
                                 <label for="visibility" class="fw-medium">Visibility <span
                                         class="text-danger">*</span></label>
@@ -134,19 +145,42 @@ use yii\bootstrap5\NavBar;
                 </div>
             </div>
         </div>
+        <!-- Modal Tìm Phòng -->
+        <div id="searchRoomModal" tabindex="-1" aria-labelledby="searchRoomModalLabel" aria-hidden="true"
+            class="modal fade">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="searchRoomModalLabel">Search Room</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group mb-4">
+                            <label for="searchRoomName" class="fw-medium">Room name</label>
+                            <input type="text" class="form-control" name="searchRoomName" id="searchRoomName"
+                                placeholder="Room name ...">
+                        </div>
+
+                        <div class="list-group" id="roomResults"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách phòng -->
         <?php foreach ($roomData as $room): ?>
         <?php if (isset($room['id'])): ?>
         <div class="discussion" data-room-id="<?= Html::encode($room['id']) ?>"
-            onclick="openChat(<?= Html::encode($room['id']) ?>, true)">
-            <div class="photo" style="background-image: url(<?= Html::encode($room['avatarUrl']) ?>);">
-            </div>
+            onclick="openChat(<?= Html::encode($room['id']) ?>, null, null, true)">
+            <div class="photo" style="background-image: url(<?= Html::encode($room['avatarUrl']) ?>);"></div>
             <div class="desc-contact">
                 <p class="name"><?= Html::encode($room['name']) ?></p>
                 <p class="message"><?= Html::encode($room['lastMessageContent']) ?></p>
             </div>
-            <div class="timer">
-                <?= Html::encode($room['relativeTime']) ?>
-            </div>
+            <div class="timer"><?= Html::encode($room['relativeTime']) ?></div>
         </div>
         <?php endif; ?>
         <?php endforeach; ?>

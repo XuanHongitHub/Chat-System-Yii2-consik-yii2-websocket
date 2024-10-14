@@ -73,13 +73,9 @@ class ServerController extends Controller
 
             // $e->client->send($message);
 
-            foreach ($this->clients as $chatClient) {
-                $chatClient->send($messageData);
-                echo "Client" . $chatClient;
+            foreach ($e->clients as $client) {
+                $client->send($message);
             }
-            // foreach ($e->clients as $client) {
-            //     $client->send($message);
-            // }
             // foreach ($server->clients as $client) {
             //     if ($client !== $e->client && $client->isWritable) {
             //         try {
