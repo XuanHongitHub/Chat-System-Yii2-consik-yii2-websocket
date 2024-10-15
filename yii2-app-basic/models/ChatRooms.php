@@ -118,15 +118,21 @@ class ChatRooms extends \yii\db\ActiveRecord
         return $this->getChatRoomUser()->count();
     }
 
+    // public function getUsers()
+    // {
+    //     return $this->hasMany(User::class, ['id' => 'user_id'])
+    //         ->viaTable(
+    //             'chat_room_user',
+    //             ['chat_room_id' => 'id'],
+    //             ['user_id' => 'id']
+    //         );
+    // }
     public function getUsers()
     {
         return $this->hasMany(User::class, ['id' => 'user_id'])
-            ->viaTable(
-                'chat_room_user',
-                ['chat_room_id' => 'id'],
-                ['user_id' => 'id']
-            );
+            ->viaTable('chat_room_user', ['chat_room_id' => 'id'], null);
     }
+
     public function getLastMessage()
     {
         return Messages::find()

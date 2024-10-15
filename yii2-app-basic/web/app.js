@@ -23,14 +23,22 @@ $(document).ready(function () {
                         suggestions.show();
                         data.forEach(function (user) {
                             suggestions.append(`
-                               <div class="friend-item d-flex align-items-center mb-2">
+                                <div class="friend-item d-flex align-items-center mb-2">
                                     <div class="avatar-container me-2">
                                         <img src="${user.avatar ? user.avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png'}" class="avatar" alt="${user.username}">
                                     </div>
                                     <div class="flex-grow-1">
                                         <div class="friend-name" data-username="${user.username}">${user.username}</div>
                                     </div>
-                                    <button class="btn btn-primary btn-sm add-to-contact" data-username="${user.username}" data-contact-id="${user.id}" ${user.isAdded ? 'disabled' : ''} type="button">
+                                    <button class="btn btn-primary btn-sm add-to-contact" 
+                                            data-username="${user.username}" 
+                                            data-avatar="${user.avatar}" 
+                                            data-contact-id="${user.id}" 
+                                            data-recipient-id="${user.recipientId}" 
+                                            data-related-id="${user.relatedId}" 
+                                            ${user.isAdded ? 'disabled' : ''} 
+                                            onclick="addContact(${user.id})" 
+                                            type="button">
                                         <i class="fa-solid fa-user-plus"></i> ${user.isAdded ? 'Added' : 'Add'}
                                     </button>
                                 </div>
@@ -49,8 +57,6 @@ $(document).ready(function () {
         }
     });
 });
-
-
 // Add Contacts
 $(document).ready(function () {
     $('#userSuggestions').on('click', '.add-to-contact', function (event) {
@@ -58,10 +64,11 @@ $(document).ready(function () {
 
         console.log('Nút đã được nhấn!');
 
-        var contactUserId = $(this).data('contact-id');
+        var contactId = $(this).data('contact-id');
         var username = $(this).data('username');
-        var avatar = $(this).data('avatar');
-
+        // var avatar = $(this).data('avatar');
+        // var relatedId = $(this).data('relatedId');
+        // var recipientId = $(this).data('id');
         $.ajax({
             type: 'POST',
             url: '/chat/add-contact',
@@ -69,31 +76,30 @@ $(document).ready(function () {
                 'X-CSRF-Token': getCsrfToken()
             },
             data: {
-                contact_user_id: contactUserId
+                contact_user_id: contactId
             },
             success: function (response) {
                 console.log('Response:', response);
                 if (response.success) {
                     $('#response-message').html('<div class="alert alert-success">Đã thêm ' + username + ' vào danh bạ!</div>');
 
-                    // Đóng modal sau khi thêm liên hệ thành công
                     $('#addContactModal').modal('hide');
 
-                    // Tạo phần tử discussion mới với thông tin người dùng thực
-                    var newDiscussion = `
-                        <div class="discussion message-active">
-                            <div class="photo" style="background-image: url(${avatar});">
-                                <div class="online"></div>
-                            </div>
-                            <div class="desc-contact">
-                                <p class="name">${username}</p>
-                                <p class="message">No messages</p>
-                            </div>
-                            <div class="timer">Just now</div>
-                        </div>
-                    `;
-                    // Thêm discussion vào danh sách
-                    $('.room-list').prepend(newDiscussion);
+                    // var newDiscussion = `
+                    //     <div class="discussion message-active" data-contact-id="${contactId}" data-recipient-id="${recipientId}" data-related-id="${relatedId}" onclick="openChat(${contactId}, ${recipientId}, ${relatedId} )">
+                    //         <div class="photo" style="background-image: url(${avatar});">
+                    //             <div class="online"></div>
+                    //         </div>
+                    //         <div class="desc-contact">
+                    //             <p class="name">${username}</p>
+                    //             <p class="message">No messages</p>
+                    //         </div>
+                    //         <div class="timer">Just now</div>
+                    //     </div>
+                    // `;
+                    // $('.user-list').prepend(newDiscussion);
+                    fetchContacts();
+
                 } else {
                     $('#response-message').html('<div class="alert alert-danger">Có lỗi xảy ra: ' + response.error + '</div>');
                 }
@@ -236,7 +242,6 @@ function joinRoom(roomId) {
             fetchRooms();
             if (response.status === 'success') {
                 alert(response.message);
-                // Cập nhật lại danh sách hoặc làm gì đó nếu cần
             } else {
                 alert(response.message);
             }
@@ -337,4 +342,188 @@ function updateChatUI(data, isRoom = false) {
     $('.header-chat .name').text(chatName);
 }
 
+// Làm mới Contacts
+function fetchContacts() {
+    $.ajax({
+        url: 'site/index',
+        type: 'GET',
+        success: function (data) {
+            $('.user-list').html($(data).find('.user-list').html());
+        },
+        error: function () {
+            alert('Có lỗi xảy ra khi tải danh sách liên hệ.');
+        }
+    });
+}
 
+// Làm mới Chat Rooms
+function fetchRooms() {
+    $.ajax({
+        url: 'site/index',
+        type: 'GET',
+        success: function (data) {
+            $('.room-list').html($(data).find('.room-list').html());
+        },
+        error: function () {
+            alert('Có lỗi xảy ra khi tải danh sách phòng chat.');
+        }
+    });
+}
+
+// Search + Add Members
+$(document).ready(function () {
+    // Tìm kiếm thành viên
+    $('[id^=members]').on('input', function () {
+        let roomId = $(this).attr('id').replace('members', ''); // Lấy ID phòng từ input
+        let query = $(this).val();
+
+        if (query.length >= 1) {
+            $.ajax({
+                url: '/chat/search-user',
+                method: 'GET',
+                data: { username: query, room_id: roomId }, // Thêm room_id vào dữ liệu
+                success: function (data) {
+                    let suggestions = $('#memberSuggestions' + roomId);
+                    suggestions.empty();
+                    if (data.length) {
+                        suggestions.show();
+                        data.forEach(function (user) {
+                            if (!user.isMember) {
+                                suggestions.append(`
+                                    <div class="friend-item d-flex align-items-center mb-2">
+                                        <div class="avatar-container me-2">
+                                            <img src="${user.avatar ? user.avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png'}" class="avatar" alt="${user.username}">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="friend-name" data-username="${user.username}">${user.username}</div>
+                                        </div>
+                                        <input type="checkbox" class="select-member ms-2" data-username="${user.username}" data-user-id="${user.id}">
+                                    </div>
+                                `);
+                            }
+                        });
+                    } else {
+                        suggestions.hide();
+                    }
+                },
+                error: function () {
+                    console.error("Error searching users.");
+                }
+            });
+        } else {
+            $('#memberSuggestions' + roomId).hide();
+        }
+    });
+
+    $('.addMemberModalTrigger').on('click', function () {
+        let roomId = $(this).data('room-id');
+
+        $.ajax({
+            url: '/chat/get-chat-room-users/' + roomId,
+            method: 'GET',
+            success: function (response) {
+                let membersList = $('#membersList' + roomId);
+                membersList.empty();
+
+                if (response.status === 'success') {
+                    response.users.forEach(function (user) {
+                        membersList.append(`
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                ${user.username}
+                                <button class="btn btn-danger btn-sm delete-member rounded-5" data-user-id="${user.id}"><i class="fa-solid fa-user-xmark"></i></button>
+                            </li>
+                        `);
+                    });
+                } else {
+                    membersList.append('<li class="list-group-item">Không có thành viên nào.</li>');
+                }
+            },
+            error: function () {
+                console.error("Error fetching chat room users.");
+            }
+        });
+    });
+});
+
+// Add Members
+function addMember(roomId) {
+    let selectedMembers = [];
+    $(`#memberSuggestions${roomId} .select-member:checked`).each(function () {
+        selectedMembers.push({ id: $(this).data('user-id') });
+    });
+
+    if (selectedMembers.length > 0) {
+        $.ajax({
+            url: '/chat/add-member',
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': getCsrfToken()
+            },
+            data: {
+                members: JSON.stringify(selectedMembers),
+                roomId: roomId,
+            },
+            success: function (response) {
+                if (response.status === 'success') {
+                    $('#addMemberModal' + roomId).modal('hide');
+                } else {
+                    console.error("Error adding members: " + response.message);
+                }
+            },
+            error: function () {
+                console.error("Error adding members.");
+            }
+        });
+    } else {
+        alert("Vui lòng chọn ít nhất một thành viên!");
+    }
+}
+
+// Delete Members
+$(document).on('click', '.delete-member', function () {
+    let userId = $(this).data('user-id');
+    let roomId = $(this).closest('ul').attr('id').replace('membersList', ''); // Sửa đoạn này
+
+    $.ajax({
+        url: '/chat/delete-member',
+        method: 'POST',
+        headers: {
+            'X-CSRF-Token': getCsrfToken()
+        },
+        data: { id: userId, roomId: roomId },
+        success: function (response) {
+            if (response.status === 'success') {
+                $(this).closest('.list-group-item').remove();
+            } else {
+                console.error("Error deleting member: " + response.message);
+            }
+        }.bind(this),
+        error: function () {
+            console.error("Error deleting member.");
+        }
+    });
+});
+
+// Leave Chat Room
+function leaveChatRoom(roomId) {
+    $.ajax({
+        url: '/chat/leave-chat-room',
+        method: 'POST',
+        data: { roomId: roomId },
+        headers: {
+            'X-CSRF-Token': getCsrfToken()
+        },
+        success: function (response) {
+            if (response.status === 'success') {
+                fetchRooms();
+            } else {
+                console.error("Error leaving chat room: " + response.message);
+                alert("Có lỗi xảy ra khi rời khỏi phòng chat.");
+            }
+        },
+        error: function () {
+            console.error("Error leaving chat room.");
+            alert("Có lỗi xảy ra khi rời khỏi phòng chat.");
+        }
+    });
+}

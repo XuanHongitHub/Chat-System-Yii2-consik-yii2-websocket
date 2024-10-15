@@ -131,7 +131,19 @@ class SiteController extends Controller
 
         $roomData = [];
         foreach ($chatRooms as $room) {
-            $avatarUrl = 'https://pngteam.com/images/chat-png-2097x1782_6a4db7cf_transparent_202aef.png.png';
+            $avatarUrl = 'https://i0.wp.com/bane-tech.com/wp-content/uploads/2015/10/R.png?ssl=1';
+
+            $members = ChatRoomUser::find()
+                ->where(['chat_room_id' => $room->id])
+                ->joinWith('user')
+                ->all();
+
+            $avatars = [];
+            foreach ($members as $member) {
+                $user = $member->user;
+                $avatarUrl = !empty($user->avatar) ? $user->avatar : 'https://i0.wp.com/bane-tech.com/wp-content/uploads/2015/10/R.png?ssl=1';
+                $avatars[] = $avatarUrl;
+            }
 
             // Lấy tin nhắn cuối cùng cho từng phòng chat
             $lastMessage = Messages::find()
@@ -146,7 +158,7 @@ class SiteController extends Controller
             $roomData[] = [
                 'id' => $room->id,
                 'name' => $room->name,
-                'avatarUrl' => $avatarUrl,
+                'avatars' => $avatars,
                 'lastMessageContent' => $lastMessageContent,
                 'relativeTime' => $relativeTime,
             ];

@@ -123,8 +123,8 @@ class ChatServer extends WebSocketServer
 
                     foreach ($this->clients as $chatClient) {
                         echo "Member ID: " . $chatClient->userId . "\n";
-                        foreach ($roomUsers as $roomUser) {
-                            if (intval($chatClient->userId) == intval($roomUser)) {
+                        foreach ($roomUsers as $roomUserId) {
+                            if (intval($chatClient->userId) == intval($roomUserId)) {
                                 $chatClient->send(json_encode([
                                     'type' => 'chat',
                                     'from' => $client->name,

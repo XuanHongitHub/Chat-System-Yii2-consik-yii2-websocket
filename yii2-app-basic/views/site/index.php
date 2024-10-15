@@ -36,28 +36,28 @@ $this->title = 'My Yii Application';
 </section>
 
 <script>
-function getSenderId(userId) {
-    return fetch(`/chat/get-sender-id?userId=${userId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.user_id && data.username) {
-                console.log("User ID:", data.user_id);
-                console.log("Username:", data.username);
-                return {
-                    user_id: data.user_id,
-                    username: data.username,
-                    avatar: data.avatar
-                };
-            } else {
-                console.error(data.error);
+    function getSenderId(userId) {
+        return fetch(`/chat/get-sender-id?userId=${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.user_id && data.username) {
+                    console.log("User ID:", data.user_id);
+                    console.log("Username:", data.username);
+                    return {
+                        user_id: data.user_id,
+                        username: data.username,
+                        avatar: data.avatar
+                    };
+                } else {
+                    console.error(data.error);
+                    return null;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
                 return null;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            return null;
-        });
-}
+            });
+    }
 </script>
 
 <?php $this->registerJs('
@@ -95,7 +95,14 @@ $(document).ready(function() {
 
         console.log("Recipient ID:", data.recipientId);
         // Only display the message if the chatId matches the current chat
+
+        if(!data.isRoom || !("' . Yii::$app->user->identity->username . '")){
+            fetchContacts();
+        }
+
         if (data.relatedId === currentChatId || data.chatId == currentChatId || data.relatedId === senderId) {
+            fetchRooms();
+
             var newMessage;
             var lastSenderId = null; // Reset last sender id for every message display
 
@@ -141,10 +148,14 @@ $(document).ready(function() {
                                 $("#messagesChat").append(newMessage);
                                 var messagesChat = document.getElementById("messagesChat");
                                 messagesChat.scrollTop = messagesChat.scrollHeight;
+                                 var sidebarLastMessage = data.chatId;
+                                var sidebarMessage = document.querySelector(`.discussion[data-related-id="${sidebarLastMessage}"] .desc-contact .message`);
+                                if (sidebarMessage) {
+                                    sidebarMessage.textContent = message; 
+                                }
                             });
                         }
                     } else {
-                        // Nếu không phải là phòng chat, gọi getSenderId
                         if (!data.isRoom) {
                             getSenderId(data.userId).then(senderInfo => {
                             if (senderInfo) {
