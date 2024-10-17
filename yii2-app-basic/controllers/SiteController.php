@@ -5,7 +5,7 @@ namespace app\controllers;
 use app\models\Contacts;
 use app\models\Messages;
 use app\models\User;
-
+use app\models\MessageStatus;
 use app\models\ResendVerificationEmailForm;
 use app\models\VerifyEmailForm;
 use Yii;
@@ -113,7 +113,27 @@ class SiteController extends Controller
                 ->one();
 
             $lastMessageContent = $lastMessage ? $lastMessage->content : 'No messages';
+            $lastMessageContentId = $lastMessage ? $lastMessage->id : NULL;
             $relativeTime = $lastMessage ? Yii::$app->formatter->asRelativeTime($lastMessage->created_at) : '';
+
+            $isRead = false;
+
+            if ($lastMessage) {
+                if ($lastMessage->user_id === $currentUserId) {
+                    $isRead = true;
+                } else {
+                    $messageStatus = MessageStatus::find()
+                        ->where(['message_id' => $lastMessageContentId, 'user_id' => $currentUserId])
+                        ->one();
+
+                    if (!$messageStatus || $messageStatus->read_at !== null) {
+                        $isRead = true;
+                    }
+                }
+            } else {
+                $isRead = true;
+            }
+
             $related = Contacts::find()
                 ->where(['user_id' => $contact->contact_user_id])
                 ->one();
@@ -123,9 +143,11 @@ class SiteController extends Controller
                 'avatarUrl' => $avatarUrl,
                 'username' => $contact->contactUser->username,
                 'lastMessageContent' => $lastMessageContent,
+                'lastMessageContentId' => $lastMessageContentId,
                 'relativeTime' => $relativeTime,
                 'recipientId' => $contact->contact_user_id,
                 'relatedId' => $relatedId,
+                'isRead' => $isRead,
             ];
         }
 
@@ -153,14 +175,34 @@ class SiteController extends Controller
                 ->one();
 
             $lastMessageContent = $lastMessage ? $lastMessage->content : 'No messages';
+            $lastMessageContentId = $lastMessage ? $lastMessage->id : NULL;
             $relativeTime = $lastMessage ? Yii::$app->formatter->asRelativeTime($lastMessage->created_at) : '';
+
+            $isRoomRead = false;
+            if ($lastMessage) {
+                if ($lastMessage->user_id === $currentUserId) {
+                    $isRoomRead = true;
+                } else {
+                    $messageStatus = MessageStatus::find()
+                        ->where(['message_id' => $lastMessageContentId, 'user_id' => $currentUserId])
+                        ->one();
+
+                    if (!$messageStatus || $messageStatus->read_at !== null) {
+                        $isRoomRead = true;
+                    }
+                }
+            } else {
+                $isRoomRead = true;
+            }
 
             $roomData[] = [
                 'id' => $room->id,
                 'name' => $room->name,
                 'avatars' => $avatars,
                 'lastMessageContent' => $lastMessageContent,
+                'lastMessageContentId' => $lastMessageContentId,
                 'relativeTime' => $relativeTime,
+                'isRoomRead' => $isRoomRead,
             ];
         }
         return $this->render('index', [

@@ -16,7 +16,7 @@ $this->title = 'My Yii Application';
 <section class="chat">
     <div class="header-chat">
         <i class="icon fa fa-user-o" aria-hidden="true"></i>
-        <p class="name" id="chatTitle"></p>
+        <p class="name me-auto" id="chatTitle"></p>
         <i class="icon clickable fa fa-ellipsis-h right" aria-hidden="true"></i>
     </div>
 
@@ -98,10 +98,11 @@ $(document).ready(function() {
 
         if(!data.isRoom || !("' . Yii::$app->user->identity->username . '")){
             fetchContacts();
+        }else{
+            fetchRooms();
         }
 
         if (data.relatedId === currentChatId || data.chatId == currentChatId || data.relatedId === senderId) {
-            fetchRooms();
 
             var newMessage;
             var lastSenderId = null; // Reset last sender id for every message display

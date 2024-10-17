@@ -64,6 +64,8 @@ $config = [
                 'chat/get-chat-room-users/<roomId:\d+>' => 'chat/get-chat-room-users',
                 'add-member' => 'chat/add-member ',
                 'delete-member' => 'chat/delete-member',
+                'delete-contact' => 'chat/delete-contact',
+
             ],
         ],
     ],
@@ -72,7 +74,7 @@ $config = [
 
 if (YII_ENV_DEV) {
     // configuration adjustments for 'dev' environment
-    // $config['bootstrap'][] = 'debug';
+    $config['bootstrap'][] = 'debug';
     $config['modules']['debug'] = [
         'class' => 'yii\debug\Module',
         // uncomment the following to add your IP if you are not connecting from localhost.

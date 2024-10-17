@@ -4,6 +4,7 @@ namespace app\daemons;
 
 use app\models\Messages;
 use app\models\Contacts;
+
 use consik\yii2websocket\events\WSClientEvent;
 use consik\yii2websocket\WebSocketServer;
 use consik\yii2websocket\events\WSClientMessageEvent;
@@ -64,8 +65,6 @@ class ChatServer extends WebSocketServer
             $client->send(json_encode(['error' => 'User ID is required.']));
         }
     }
-
-
     public function commandChat(ConnectionInterface $client, $msg)
     {
         try {
@@ -112,6 +111,8 @@ class ChatServer extends WebSocketServer
                     throw new Exception("Error saving message: " . implode(", ", $messagesModel->getErrors()));
                 }
 
+
+
                 if ($request['isRoom']) {
                     $roomId = $request['chatId'];
                     $roomUsers = ChatRoomUser::find()
@@ -121,10 +122,22 @@ class ChatServer extends WebSocketServer
                     echo "Members: " . json_encode($roomUsers) . "\n";
                     echo "Room ID: " . json_encode($roomId) . "\n";
 
+                    foreach ($roomUsers as $roomUserId) {
+                        // Message Status
+                        $messageStatus = new \app\models\MessageStatus();
+                        $messageStatus->message_id = $messagesModel->id;
+                        echo "******RoomUser ID: " . $roomUserId . "\n";
+                        $messageStatus->user_id = $roomUserId;
+                        $messageStatus->read_at = null;
+                        $messageStatus->save();
+                    }
+
                     foreach ($this->clients as $chatClient) {
                         echo "Member ID: " . $chatClient->userId . "\n";
                         foreach ($roomUsers as $roomUserId) {
+
                             if (intval($chatClient->userId) == intval($roomUserId)) {
+
                                 $chatClient->send(json_encode([
                                     'type' => 'chat',
                                     'from' => $client->name,
@@ -145,6 +158,13 @@ class ChatServer extends WebSocketServer
                             echo "Client ID: $chatClient->userId, Message: $message\n";
                             echo "Recipient ID: " . $recipientId . "\n"; // In ra recipientId
 
+                            // Message Status
+                            $messageStatus = new \app\models\MessageStatus();
+                            $messageStatus->message_id = $messagesModel->id;
+                            echo "******Recipient ID: " . $request['recipientId'] . "\n";
+                            $messageStatus->user_id = $request['recipientId'];
+                            $messageStatus->read_at = null;
+                            $messageStatus->save();
 
                             $chatClient->send(json_encode([
                                 'type' => 'chat',
@@ -167,9 +187,6 @@ class ChatServer extends WebSocketServer
             $client->send(json_encode(['error' => $e->getMessage()]));
         }
     }
-
-
-
     public function commandSetName(ConnectionInterface $client, $msg)
     {
         try {

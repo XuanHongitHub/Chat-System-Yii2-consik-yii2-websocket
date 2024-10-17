@@ -31,12 +31,15 @@ class MessageStatus extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['message_id', 'user_id', 'read_at'], 'required'],
-            [['message_id', 'user_id', 'read_at'], 'integer'],
+            [['message_id', 'user_id'], 'required'],
+            [['message_id', 'user_id'], 'integer'],
+            [['read_at'], 'integer'],
+            [['read_at'], 'default', 'value' => null],
             [['message_id'], 'exist', 'skipOnError' => true, 'targetClass' => Messages::class, 'targetAttribute' => ['message_id' => 'id']],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
         ];
     }
+
 
     /**
      * {@inheritdoc}

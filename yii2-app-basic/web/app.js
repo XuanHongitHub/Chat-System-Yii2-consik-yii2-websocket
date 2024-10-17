@@ -9,7 +9,7 @@ document.getElementById('messageInput').addEventListener('keydown', function (ev
 });
 // Tìm Users
 $(document).ready(function () {
-    $('#contactUsername').on('input', function () {
+    $(document).on('input', '#contactUsername', function () {
         let username = $(this).val();
         if (username.length >= 1) {
             $.ajax({
@@ -37,7 +37,6 @@ $(document).ready(function () {
                                             data-recipient-id="${user.recipientId}" 
                                             data-related-id="${user.relatedId}" 
                                             ${user.isAdded ? 'disabled' : ''} 
-                                            onclick="addContact(${user.id})" 
                                             type="button">
                                         <i class="fa-solid fa-user-plus"></i> ${user.isAdded ? 'Added' : 'Add'}
                                     </button>
@@ -112,51 +111,52 @@ $(document).ready(function () {
     });
 });
 // Add Chat Rooms
-$(document).ready(function () {
-    $('#members').on('input', function () {
-        let query = $(this).val();
-        if (query.length >= 1) {
-            $.ajax({
-                url: '/chat/search-user',
-                method: 'GET',
-                data: { username: query },
-                success: function (data) {
-                    let suggestions = $('#memberSuggestions');
-                    suggestions.empty();
-                    if (data.length) {
-                        suggestions.show();
-                        data.forEach(function (user) {
-                            suggestions.append(`
-                                <div class="friend-item d-flex align-items-center mb-2">
-                                    <div class="avatar-container me-2">
-                                        <img src="${user.avatar ? user.avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png'}" class="avatar" alt="${user.username}">
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="friend-name" data-username="${user.username}">${user.username}</div>
-                                    </div>
-                                    <input type="checkbox" class="select-member ms-2" data-username="${user.username}" data-user-id="${user.id}">
+$(document).on('input', '#members', function () {
+    let query = $(this).val();
+    if (query.length >= 1) {
+        $.ajax({
+            url: '/chat/search-user',
+            method: 'GET',
+            data: { username: query },
+            success: function (data) {
+                let suggestions = $('#memberSuggestions');
+                suggestions.empty();
+                if (data.length) {
+                    suggestions.show();
+                    data.forEach(function (user) {
+                        suggestions.append(`
+                            <div class="friend-item d-flex align-items-center mb-2">
+                                <div class="avatar-container me-2">
+                                    <img src="${user.avatar ? user.avatar : 'https://icons.veryicon.com/png/o/miscellaneous/common-icons-30/my-selected-5.png'}" class="avatar" alt="${user.username}">
                                 </div>
-                            `);
-                        });
-                    } else {
-                        suggestions.hide();
-                    }
-                },
-                error: function () {
-                    console.error("Error searching users.");
+                                <div class="flex-grow-1">
+                                    <div class="friend-name" data-username="${user.username}">${user.username}</div>
+                                </div>
+                                <input type="checkbox" class="select-member ms-2" data-username="${user.username}" data-user-id="${user.id}">
+                            </div>
+                        `);
+                    });
+                } else {
+                    suggestions.hide();
                 }
-            });
-        } else {
-            $('#memberSuggestions').hide();
-        }
-    });
+            },
+            error: function () {
+                console.error("Error searching users.");
+            }
+        });
+    } else {
+        $('#memberSuggestions').hide();
+    }
+});
 
+$(document).ready(function () {
     $('#addRoomButton').on('click', function (event) {
         event.preventDefault();
+
         var roomName = $('#roomName').val();
         var selectedMembers = [];
+        var visibility = $('#visibility').val();
 
-        // Collect selected members from checked checkboxes
         $('#memberSuggestions .select-member:checked').each(function () {
             let userId = $(this).data('user-id');
             let username = $(this).data('username');
@@ -171,15 +171,13 @@ $(document).ready(function () {
             },
             data: {
                 room_name: roomName,
-                members: JSON.stringify(selectedMembers)
+                members: JSON.stringify(selectedMembers),
+                visibility: visibility,
             },
             success: function (response) {
                 fetchRooms();
                 if (response.status === 'success') {
-                    $('#response-message').html('<div class="alert alert-success">' + response.message + '</div>');
-                    setTimeout(function () {
-                        $('#addRoomModal').modal('hide');
-                    }, 5000);
+                    $('#addRoomModal').modal('hide');
                 } else {
                     $('#response-message').html('<div class="alert alert-danger">' + response.message + '</div>');
                 }
@@ -192,7 +190,7 @@ $(document).ready(function () {
 });
 
 $(document).ready(function () {
-    $('#searchRoomName').on('input', function () {
+    $(document).on('input', '#searchRoomName', function () {
         var query = $(this).val();
         if (query.length > 1) {
             $.ajax({
@@ -204,7 +202,7 @@ $(document).ready(function () {
                 data: { roomName: query },
                 success: function (data) {
                     var roomList = $('#roomResults');
-                    roomList.empty();
+                    // roomList.empty();
 
                     if (data.length > 0) {
                         data.forEach(function (room) {
@@ -242,6 +240,7 @@ function joinRoom(roomId) {
             fetchRooms();
             if (response.status === 'success') {
                 alert(response.message);
+                $('#searchRoomModal').modal('hide');
             } else {
                 alert(response.message);
             }
@@ -252,24 +251,40 @@ function joinRoom(roomId) {
     });
 }
 
-
 // Active Contact Chat
-function openChat(id, recipientId = null, relatedId = null, isRoom = false) {
+function openChat(id, lastMessageContentId = null, recipientId = null, relatedId = null, isRoom = false) {
     updateChatId(id, recipientId, relatedId, isRoom);
+
+    const discussions = document.querySelectorAll('.discussion');
+    discussions.forEach(discussion => {
+        discussion.classList.remove('message-active');
+    });
+
+    let currentDiscussion;
+    if (isRoom) {
+        currentDiscussion = document.querySelector(`.discussion[data-room-id="${id}"]`);
+        currentDiscussion.classList.remove('unread');
+    } else {
+        currentDiscussion = document.querySelector(`.discussion[data-contact-id="${id}"]`);
+        currentDiscussion.classList.remove('unread');
+    }
+
+    if (currentDiscussion) {
+        currentDiscussion.classList.add('message-active');
+    }
 
     let name = isRoom ? document.querySelector(`.discussion[data-room-id="${id}"] .name`).innerText :
         document.querySelector(`.discussion[data-contact-id="${id}"] .name`).innerText;
 
-
-    // Kiểm tra xem name có hợp lệ không
     if (name) {
         document.querySelector('#chatTitle').innerText = name;
     } else {
         document.querySelector('#chatTitle').innerText = 'Không có tên';
     }
 
-    // Gửi yêu cầu lấy tin nhắn
-    const url = isRoom ? '/chat/messages/' + id : '/chat/messages/' + id;
+    const url = isRoom ? `/chat/messages/${id}?lastMessageContentId=${lastMessageContentId}` :
+        `/chat/messages/${id}?lastMessageContentId=${lastMessageContentId}`;
+
     $.ajax({
         url: url,
         method: 'GET',
@@ -373,7 +388,7 @@ function fetchRooms() {
 // Search + Add Members
 $(document).ready(function () {
     // Tìm kiếm thành viên
-    $('[id^=members]').on('input', function () {
+    $(document).on('input', '[id^=members]', function () {
         let roomId = $(this).attr('id').replace('members', ''); // Lấy ID phòng từ input
         let query = $(this).val();
 
@@ -524,6 +539,29 @@ function leaveChatRoom(roomId) {
         error: function () {
             console.error("Error leaving chat room.");
             alert("Có lỗi xảy ra khi rời khỏi phòng chat.");
+        }
+    });
+}
+
+function deleteContact(contactId) {
+    $.ajax({
+        url: '/chat/delete-contact',
+        method: 'POST',
+        data: { contactId: contactId },
+        headers: {
+            'X-CSRF-Token': getCsrfToken()
+        },
+        success: function (response) {
+            if (response.status === 'success') {
+                fetchContacts();
+            } else {
+                console.error("Error Delete Contact: " + response.message);
+                alert("Có lỗi xảy ra khi Xóa liên hệ.");
+            }
+        },
+        error: function () {
+            console.error("Error Delete Contact.");
+            alert("Có lỗi xảy ra khi Xóa liên hệ.");
         }
     });
 }

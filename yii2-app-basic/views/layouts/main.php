@@ -37,25 +37,23 @@ AppAsset::register($this);
 <body class="d-flex flex-column h-100">
     <?php $this->beginBody() ?>
     <?php $contacts = $this->params['contacts'] ?? []; ?>
-    <div class="container-fluid">
-        <div class="row-ct">
+    <div class="container-fluid d-flex p-0">
 
-            <?= Breadcrumbs::widget([
-                'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
-            ]) ?>
-            <?= Alert::widget() ?>
-            <?= $content ?>
-        </div>
+        <?= Breadcrumbs::widget([
+            'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
+        ]) ?>
+        <?= Alert::widget() ?>
+        <?= $content ?>
     </div>
 
     <?php $this->endBody() ?>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
     integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous">
-</script>
+    </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
     integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous">
-</script>
+    </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tagify/4.31.3/tagify.min.js"
     integrity="sha512-YrKVSda1sKH9vnfrtO2Dzkv1CHmsnQsPTIBv9IDdu7bqiHAvmTf02zxHv3t+d2hcIWTgJHi+6X6Oy21MVyWNwA=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -63,13 +61,13 @@ AppAsset::register($this);
     integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <?php if (!Yii::$app->user->isGuest): ?>
-<script>
-var currentUserId = <?= Yii::$app->user->id ?>;
-</script>
+    <script>
+        var currentUserId = <?= Yii::$app->user->id ?>;
+    </script>
 <?php else: ?>
-<script>
-var currentUserId = null;
-</script>
+    <script>
+        var currentUserId = null;
+    </script>
 <?php endif; ?>
 
 </html>

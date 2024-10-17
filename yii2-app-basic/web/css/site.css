@@ -220,6 +220,19 @@ a.desc:after {
     border-right: solid 1px #E0E0E0;
 }
 
+@media (max-width: 900px) {
+    .discussions {
+        width: 35%;
+        height: 100vh;
+        /* box-shadow: 0px 8px 10px rgba(0, 0, 0, 0.20); */
+        overflow: hidden;
+        background-color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        border-right: solid 1px #E0E0E0;
+    }
+}
+
 .discussions .discussion {
     width: 100%;
     height: 90px;
@@ -235,6 +248,12 @@ a.desc:after {
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #E0E0E0;
+}
+
+.discussions .barhidden {
+    display: flex;
+    align-items: center;
     color: #E0E0E0;
 }
 
@@ -576,7 +595,12 @@ a.desc:after {
     overflow-y: auto;
     padding: 10px;
     position: absolute;
+    scrollbar-width: none;
+    /* Firefox */
+}
 
+#messagesChat::-webkit-scrollbar {
+    display: none;
 }
 
 .avatar-group {
@@ -638,4 +662,17 @@ a.desc:after {
     margin: 0 auto;
     padding: 40px;
     width: 450px;
+}
+
+
+.discussion.unread {
+    font-weight: 700;
+}
+
+.discussion.read {
+    font-weight: 400;
+}
+
+.hidden {
+    display: none !important;
 }

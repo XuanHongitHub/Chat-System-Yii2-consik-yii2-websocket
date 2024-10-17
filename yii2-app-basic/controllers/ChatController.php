@@ -5,6 +5,7 @@ namespace app\controllers;
 use app\models\User;
 use app\models\Contacts;
 use app\models\Messages;
+use app\models\MessageStatus;
 use yii\web\Response;
 use yii\web\Controller;
 use app\models\ChatRooms;
@@ -191,8 +192,7 @@ class ChatController extends Controller
             return ['status' => 'error', 'message' => 'Có lỗi xảy ra khi thêm phòng chat.'];
         }
     }
-
-    public function actionMessages($id)
+    public function actionMessages($id, $lastMessageContentId)
     {
         $currentUserId = Yii::$app->user->id;
 
@@ -231,16 +231,18 @@ class ChatController extends Controller
                     ],
                     'isMine' => ($message->user_id === $currentUserId),
                 ];
+
+                if ($lastMessageContentId) {
+                    $this->updateMessageStatus($lastMessageContentId, $currentUserId);
+                }
             }
 
             return $this->asJson(['messages' => $data]);
         }
 
-        // Nếu không tìm thấy contact, kiểm tra xem có phải là room hay không
         $chatRoom = ChatRooms::findOne($id);
 
         if ($chatRoom) {
-            // Lấy tin nhắn trong phòng chat
             $messages = Messages::find()
                 ->where(['chat_room_id' => $chatRoom->id])
                 ->with('user')
@@ -259,15 +261,17 @@ class ChatController extends Controller
                     ],
                     'isMine' => ($message->user_id === $currentUserId),
                 ];
+
+                if ($lastMessageContentId) {
+                    $this->updateMessageStatus($lastMessageContentId, $currentUserId);
+                }
             }
 
             return $this->asJson(['messages' => $data]);
         }
 
-        // Nếu không phải là contact hay room
         return $this->asJson(['messages' => [], 'error' => 'Contact or Room not found.']);
     }
-
     public function actionGetSenderId($userId)
     {
         $user = User::find()->where(['id' => $userId])->one();
@@ -407,6 +411,36 @@ class ChatController extends Controller
             return ['status' => 'error', 'message' => 'Không tìm thấy thành viên trong phòng chat!'];
         }
     }
+    public function actionDeleteContact()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $request = Yii::$app->request;
+        $contactId = $request->post('contactId');
+        $userId = Yii::$app->user->id;
+
+        $contact1 = Contacts::find()->where(['user_id' => $userId, 'contact_user_id' => $contactId])->one();
+        $contact2 = Contacts::find()->where(['user_id' => $contactId, 'contact_user_id' => $userId])->one();
+
+        $contact1 = Contacts::find()->where(['user_id' => $userId, 'contact_user_id' => $contactId])->one();
+        $contact2 = Contacts::find()->where(['user_id' => $contactId, 'contact_user_id' => $userId])->one();
+
+        if ($contact1 && $contact2) {
+            $contact1->delete();
+            $contact2->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Liên hệ đã được xóa thành công.'
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => 'Liên hệ không tồn tại hoặc đã bị xóa.'
+            ];
+        }
+    }
+
     public function actionLeaveChatRoom()
     {
         $request = Yii::$app->request;
@@ -423,6 +457,15 @@ class ChatController extends Controller
             }
         } else {
             return $this->asJson(['status' => 'error', 'message' => 'Bạn không phải là thành viên của phòng này.']);
+        }
+    }
+    protected function updateMessageStatus($lastMessageContentId, $currentUserId)
+    {
+        $messageStatus = MessageStatus::findOne(['message_id' => $lastMessageContentId, 'user_id' => $currentUserId, 'read_at' => NULL]);
+
+        if ($messageStatus) {
+            $messageStatus->read_at = time();
+            $messageStatus->save();
         }
     }
 
